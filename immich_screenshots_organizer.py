@@ -107,14 +107,22 @@ def fetchServerVersion():
     # for older versions.
     # Initialize the version with the latest version without this API call
     version = {'major': 1, 'minor': 105, "patch": 1}
-    r = requests.get(root_url + 'server-info/version', **requests_kwargs)
-    assert r.status_code == 200 or r.status_code == 404
+
+    # 1.118.x and up
+    r = requests.get(root_url + 'server/version', **requests_kwargs)
     if r.status_code == 200:
         version = r.json()
         logging.info("Detected Immich server version %s.%s.%s", version['major'], version['minor'], version['patch'])
-    else:
-        logging.info("Detected Immich server version %s.%s.%s or older", version['major'], version['minor'],
-                     version['patch'])
+        return version
+
+    # 1.106.x - 1.117.x
+    r = requests.get(root_url + 'server-info/version', **requests_kwargs)
+    if r.status_code == 200:
+        version = r.json()
+        logging.info("Detected Immich server version %s.%s.%s", version['major'], version['minor'], version['patch'])
+        return version
+
+    logging.info("Detected Immich server version %s.%s.%s or older", version['major'], version['minor'], version['patch'])
     return version
 
 # Unused
@@ -175,7 +183,6 @@ def fetchAssetsMinorV106():
 
 
 # Fetches assets from the Immich API
-# Takes different API versions into account for compatibility
 def fetchAlbums():
     apiEndpoint = 'albums'
     r = requests.get(root_url + apiEndpoint, **requests_kwargs)
@@ -300,7 +307,7 @@ logging.info("%d albums created", cpt)
 
 logging.info("Adding assets to albums")
 # Note: Immich manages duplicates without problem,
-# so we can each time ad all assets to same album, no photo will be duplicated
+# so each time we can add all assets to same album, no photo will be duplicated
 for album, assets in album_to_assets.items():
     id = album_to_id[album]
     addAssetsToAlbum(id, assets)
