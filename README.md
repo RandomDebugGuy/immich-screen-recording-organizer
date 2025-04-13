@@ -45,6 +45,9 @@ This script is mostly based on the repository:
       --include-low-res
                             Will add photos that are low resolution(under 1400x1400/~2MP) to the screenshots album as well. (default: False)
    
+      --with-smartsearch
+                            Will add screenshots found using smartsearch to the screenshots album as well. (default: False)
+   
       --archive-screens
                             Will archive the screenshots as to hide them from the timeline. (default: False)
    
@@ -90,8 +93,8 @@ a screenshot with the API that Immich provides. I'm aware that Apple devices wil
 exifComment and XMPComment, but since this is not exposed by the Immich API trying to read this out would add 
 unnecessary complexity.
 
-I've also investigated using smart search to find screenshots, but this was very unreliable as a lot of regular pictures
-would also show up in the resulting assets so for now I deem that not a good way to find screenshots.
+I've also investigated using smart search to find screenshots, but this can be unreliable as regular pictures
+can also show up in the resulting assets. For now smartsearch can be toggled on using the `--with-smartsearch` flag.
 
 Ways to improve the mechanism would be to make an educated guess based on the dimensions of the images and the size of 
 the file. The `--include-low-res` flag partly does this for photos smaller than ~2MP. However, with enough compression 

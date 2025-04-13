@@ -12,8 +12,10 @@ parser = argparse.ArgumentParser(
 parser.add_argument("album_name", help="The album name for your screenshots")
 parser.add_argument("api_url", help="The root API URL of immich, e.g. https://immich.mydomain.com/api/")
 parser.add_argument("api_key", help="The Immich API Key to use")
-parser.add_argument("--low-res", default=False, action="store_true",
+parser.add_argument("--include-low-res", default=False, action="store_true",
                     help="Include photos that are low resolution(under 1400x1400/~2MP). Default is false")
+parser.add_argument("--with-smartsearch", default=False, action="store_true",
+                    help="Include screenshots that are found using smart search. Default is false")
 parser.add_argument("--archive-screens", default=False, action="store_true",
                     help="Archives all the screenshots to hide them from the timeline. Default is false")
 parser.add_argument("-n", "--library-name",
@@ -29,17 +31,18 @@ parser.add_argument("-C", "--fetch-chunk-size", default=5000, type=int,
 parser.add_argument("-l", "--log-level", default="INFO", choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                     help="Log level to use")
 args = vars(parser.parse_args())
+
 # set up logger to log in logfmt format
 logging.basicConfig(level=args["log_level"], stream=sys.stdout,
                     format='time=%(asctime)s level=%(levelname)s msg=%(message)s')
 logging.Formatter.formatTime = (lambda self, record, datefmt=None: datetime.datetime.fromtimestamp(record.created,
-                                                                                                   datetime.timezone.utc).astimezone().isoformat(
-    sep="T", timespec="milliseconds"))
+                    datetime.timezone.utc).astimezone().isoformat(sep="T", timespec="milliseconds"))
 
 album_name = args["album_name"]
 root_url = args["api_url"]
 api_key = args["api_key"]
-low_res = args['low_res']
+low_res = args['include_low_res']
+smartsearch = args['with_smartsearch']
 archive_screens = args['archive_screens']
 library_name = args["library_name"]
 import_path = args["import_path"]
@@ -47,12 +50,11 @@ number_of_images_per_request = args["chunk_size"]
 number_of_assets_to_fetch_per_request = args["fetch_chunk_size"]
 unattended = args["unattended"]
 
-# Album Levels Range handling
-
 logging.debug("album_name = %s", album_name)
 logging.debug("root_url = %s", root_url)
 logging.debug("api_key = %s", api_key)
 logging.debug("low_res = %s", low_res)
+logging.debug("smartsearch = %s", smartsearch)
 logging.debug("archive_screens = %s", archive_screens)
 logging.debug("library_name = %s", library_name)
 logging.debug("library_name = %s", import_path)
@@ -84,6 +86,7 @@ def getLibraryByPath(import_path):
         if import_path in library['importPaths']:
             return library['id']
     return None
+
 
 def getLibraryByName(lib_name):
     libraries = fetch_libraries()
@@ -134,19 +137,8 @@ def fetchAssetInfo(id):
 
 
 # Fetches assets from the Immich API
-# Takes different API versions into account for compatibility
+# Uses the /search/metadata call.
 def fetchAssets():
-    if version['major'] == 1 and version['minor'] <= 105:
-        logging.error("This code only works for version >1.105")
-        exit(1)
-    else:
-        return fetchAssetsMinorV106()
-
-
-# Fetches assets from the Immich API
-# Uses the /search/meta-data call. Much more efficient than the legacy method
-# since this call allows to filter for assets that are not in an album only.
-def fetchAssetsMinorV106():
     assets = []
     # prepare request body
     body = {}
@@ -178,9 +170,49 @@ def fetchAssetsMinorV106():
         responseJson = r.json()
         assetsReceived = responseJson['assets']['items']
         logging.debug("Received %s assets with chunk %s", len(assetsReceived), page)
-        assets = assets + assetsReceived
+        assets += assetsReceived
+    if smartsearch:
+        assets += fetchAssetsSearchSmart()
     return assets
 
+# Fetches assets from the Immich API
+# Uses the /search/smart call.
+def fetchAssetsSearchSmart():
+    assets = []
+    # prepare request body
+    body = {}
+    body['query'] = 'screenshot'
+    body['isOffline'] = 'false'
+    body['type'] = 'IMAGE'
+    body['withExif'] = True
+    if (library_name is not None or import_path is not None) and library_id is not None:
+        body['libraryId'] = library_id
+        logging.debug("library_id: %s", library_id)
+    # This API call allows a maximum page size of 1000
+    number_of_assets_to_fetch_per_request_search = min(1000, number_of_assets_to_fetch_per_request)
+    body['size'] = number_of_assets_to_fetch_per_request_search
+    # Initial API call, let's fetch our first chunk
+    page = 1
+    body['page'] = str(page)
+    r = requests.post(root_url + 'search/smart', json=body, **requests_kwargs)
+    r.raise_for_status()
+    responseJson = r.json()
+    assetsReceived = responseJson['assets']['items']
+    logging.debug("Received %s assets with chunk %s", len(assetsReceived), page)
+
+    assets = assets + assetsReceived
+    # If we got a full chunk size back, let's perfrom subsequent calls until we get less than a full chunk size
+    while len(assetsReceived) == number_of_assets_to_fetch_per_request_search:
+        page += 1
+        body['page'] = page
+        r = requests.post(root_url + 'search/metadata', json=body, **requests_kwargs)
+        assert r.status_code == 200
+        responseJson = r.json()
+        assetsReceived = responseJson['assets']['items']
+        logging.debug("Received %s assets with chunk %s", len(assetsReceived), page)
+        assets += assetsReceived
+    print(assets)
+    return assets
 
 # Fetches assets from the Immich API
 def fetchAlbums():
@@ -204,12 +236,13 @@ def createAlbum(albumName):
 
 
 def unarchiveAsset(id):
-    archiveAsset(id, False)
+    archiveAsset(id, True)
 
-def archiveAsset(id, doArchive = True):
+
+def archiveAsset(id, unarchiveAsset = False):
     apiEndpoint = 'assets/'
     data = {
-        'isArchived': doArchive,
+        'isArchived': not unarchiveAsset,
     }
     r = requests.put(root_url + apiEndpoint + id, json=data, **requests_kwargs)
     assert r.status_code in [200, 201]
@@ -247,7 +280,10 @@ def addAssetsToAlbum(albumId, assets):
 if root_url[-1] != '/':
     root_url = root_url + '/'
 
-version = fetchServerVersion()
+serverVersion = fetchServerVersion()
+if serverVersion['major'] == 1 and serverVersion['minor'] <= 105:
+    logging.error("This code only works for version >1.105")
+    exit(1)
 
 library_id = None
 if library_name is not None:
@@ -259,7 +295,7 @@ logging.info("Requesting all assets")
 assets = fetchAssets()
 logging.info("%d photos found", len(assets))
 
-logging.info("Sorting assets to corresponding albums using folder name")
+logging.info("Sorting assets that are screenshots to the album...")
 album_to_assets = defaultdict(list)
 assets_to_archive = []
 assets_to_unarchive = []
