@@ -3,7 +3,7 @@
 This is a python script designed to automatically organize screenshots into an album in [Immich](https://immich.app/).
 This is useful for keeping screenshots seperate from pictures and uncluttering the timeline. Currently only screenshots(photos) are supported, screenrecordings(videos) are __not supported__.
 
-__Current compatibility:__ Immich v1.106.x and up
+__Current compatibility:__ Immich v1.131.x and up
 
 ## Disclaimer
 This script is mostly based on the repository: [immich-folder-album-creator](https://github.com/Salvoxia/immich-folder-album-creator/tree/main)
