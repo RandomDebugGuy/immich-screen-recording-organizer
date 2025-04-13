@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument("album_name", help="The album name for your screenshots")
 parser.add_argument("api_url", help="The root API URL of immich, e.g. https://immich.mydomain.com/api/")
 parser.add_argument("api_key", help="The Immich API Key to use")
-parser.add_argument("--include-exifless", default=False, action="store_true",
-                    help="Include photos that don't have any exif data i.e. metadata. Default is false")
+parser.add_argument("--low-res", default=False, action="store_true",
+                    help="Include photos that are low resolution(under 1400x1400/~2MP). Default is false")
 parser.add_argument("--archive-screens", default=False, action="store_true",
                     help="Archives all the screenshots to hide them from the timeline. Default is false")
 parser.add_argument("-n", "--library-name",
@@ -39,7 +39,7 @@ logging.Formatter.formatTime = (lambda self, record, datefmt=None: datetime.date
 album_name = args["album_name"]
 root_url = args["api_url"]
 api_key = args["api_key"]
-include_exifless = args['include_exifless']
+low_res = args['low_res']
 archive_screens = args['archive_screens']
 library_name = args["library_name"]
 import_path = args["import_path"]
@@ -52,7 +52,7 @@ unattended = args["unattended"]
 logging.debug("album_name = %s", album_name)
 logging.debug("root_url = %s", root_url)
 logging.debug("api_key = %s", api_key)
-logging.debug("include_exifless = %s", include_exifless)
+logging.debug("low_res = %s", low_res)
 logging.debug("archive_screens = %s", archive_screens)
 logging.debug("library_name = %s", library_name)
 logging.debug("library_name = %s", import_path)
@@ -152,7 +152,7 @@ def fetchAssetsMinorV106():
     body = {}
     body['isOffline'] = 'false'
     body['type'] = 'IMAGE'
-    body['withExif'] = not include_exifless
+    body['withExif'] = True
     if (library_name is not None or import_path is not None) and library_id is not None:
         body['libraryId'] = library_id
         logging.debug("library_id: %s", library_id)
@@ -269,12 +269,11 @@ if not len(album_name) > 0:
     exit(1)
 
 for asset in assets:
-    if "exifInfo" in asset:
-        if "exposureTime" in asset['exifInfo'] and asset['exifInfo']['exposureTime'] is None:
-            album_to_assets[album_name].append(asset['id'])
-            if archive_screens:
-                assets_to_archive.append(asset['id'])
-    elif include_exifless:
+    if "exposureTime" in asset['exifInfo'] and asset['exifInfo']['exposureTime'] is None:
+        album_to_assets[album_name].append(asset['id'])
+        if archive_screens:
+            assets_to_archive.append(asset['id'])
+    elif low_res and (int(asset['exifInfo']['exifImageWidth']) * int(asset['exifInfo']['exifImageHeight'])) < 1960000:
         album_to_assets[album_name].append(asset['id'])
         if archive_screens:
             assets_to_archive.append(asset['id'])
