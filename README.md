@@ -1,14 +1,8 @@
-# Immich Screenshots Organizer
+# Immich Screen recordings Organizer
 
-This is a python script designed to automatically organize screenshots into an album in [Immich](https://immich.app/).
-This is useful for keeping screenshots seperate from pictures and uncluttering the timeline. Currently only 
-screenshots(photos) are supported, screenrecordings(videos) are __not supported__.
+This is a fork of [immich-screenshots-organizer](https://github.com/GreaseHeadD/immich-screenshots-organizer) from GreaseHeadD, but instead of organizing screenshots, it organizes screen recordings.
 
 __Current compatibility:__ Immich v1.131.x and up
-
-## Disclaimer
-This script is mostly based on the repository: 
-[immich-folder-album-creator](https://github.com/Salvoxia/immich-folder-album-creator/tree/main)
 
 # Table of Contents
 1. [Usage (Bare Python Script)](#bare-python-script)
