@@ -4,6 +4,11 @@ This is a fork of [immich-screenshots-organizer](https://github.com/GreaseHeadD/
 
 __Current compatibility:__ Immich v1.131.x and up
 
+## Disclaimer
+This script is based on the following repositories: 
+[immich-folder-album-creator](https://github.com/Salvoxia/immich-folder-album-creator/tree/main)
+[immich-screenshots-organizer](https://github.com/GreaseHeadD/immich-screenshots-organizer)
+
 # Table of Contents
 1. [Usage (Bare Python Script)](#bare-python-script)
 2. [How It Works](#how-it-works)
@@ -13,8 +18,8 @@ __Current compatibility:__ Immich v1.131.x and up
 ### Bare Python Script
 1. Download the script and its requirements
     ```bash
-    curl https://raw.githubusercontent.com/GreaseHeadD/immich-screenshots-organizer/main/immich_screenshots_organizer.py -o immich_screenshot_organizer.py
-    curl https://raw.githubusercontent.com/GreaseHeadD/immich-screenshots-organizer/main/requirements.txt -o requirements.txt
+    curl https://raw.githubusercontent.com/RandomDebugGuy/immich-screen-recording-organizer/main/immich_screenshots_organizer.py -o immich_screenshot_organizer.py
+    curl https://raw.githubusercontent.com/RandomDebugGuy/immich-screen-recording-organizer/main/requirements.txt -o requirements.txt
     ```
 2. Install requirements
     ```bash
