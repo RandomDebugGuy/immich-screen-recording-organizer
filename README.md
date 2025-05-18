@@ -58,7 +58,7 @@ This script is based on the following repositories:
     ```
 __Plain example without optional arguments:__
 ```bash
-python3 ./immich_screenrecord_organizer.py screenrecordingsAlbumName https://immich.mydomain.com/api thisIsMyApiKeyCopiedFromImmichWebGui --other-Arguments
+python3 ./immich_screenrecord_organizer.py screenrecordingsAlbumName https://immich.mydomain.com/api thisIsMyApiKeyCopiedFromTheImmichWebGui
 ```
 __Note: if specifying a library, import_path is preferred over library_name, because library names aren't unique.__
 
