@@ -6,8 +6,8 @@ __Current compatibility:__ Immich v1.131.x and up
 
 ## Disclaimer
 This script is based on the following repositories: 
-[immich-folder-album-creator](https://github.com/Salvoxia/immich-folder-album-creator/tree/main)
-[immich-screenshots-organizer](https://github.com/GreaseHeadD/immich-screenshots-organizer)
+- [immich-folder-album-creator](https://github.com/Salvoxia/immich-folder-album-creator/tree/main)
+- [immich-screenshots-organizer](https://github.com/GreaseHeadD/immich-screenshots-organizer)
 
 # Table of Contents
 1. [Usage (Bare Python Script)](#bare-python-script)
