@@ -179,7 +179,7 @@ def fetchAssets(query):
         assets += assetsReceived
     #if smartsearch:
     #    assets += fetchAssetsSearchSmart()
-    print(assets[1])
+    logging.debug(assets[1])
     return assets
 
 # Fetches assets from the Immich API
@@ -188,7 +188,7 @@ def fetchAssetsSearchSmart(query):
     assets = []
     # prepare request body
     body = {}
-    print(query or 'screen')
+    logging.debug(query or 'screen')
     body['query'] = query or 'screen'
     body['isOffline'] = 'false'
     body['type'] = 'VIDEO'
