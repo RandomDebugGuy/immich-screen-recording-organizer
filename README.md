@@ -27,36 +27,35 @@ This script is based on the following repositories:
     ```
 3. Run the script
     ```
-usage: immich_screenrecord_organizer.py [-h] [-d] [-q QUERY] [--include-low-res] [-a] [-n LIBRARY_NAME] [-p IMPORT_PATH] [-u] [-c CHUNK_SIZE] [-C FETCH_CHUNK_SIZE] [-l {CRITICAL,ERROR,WARNING,INFO,DEBUG}] screen_recordings album_name api_url api_key
+    usage: immich_screenrecord_organizer.py [-h] [-d] [-q QUERY] [--include-low-res] [-a] [-n LIBRARY_NAME] [-p IMPORT_PATH] [-u] [-c CHUNK_SIZE] [-C FETCH_CHUNK_SIZE] [-l {CRITICAL,ERROR,WARNING,INFO,DEBUG}] screen_recordings album_name api_url api_key
 
-Organize screen recordings in immich via the search API using a specific filename match query
+    Organize screen recordings in immich via the search API using a specific filename match query
 
-positional arguments:
-  screen_recordings     ah fuck it i know what this does i probably wont push it to github idk
-  album_name            The album name for your screen recordings
-  api_url               The root API URL of immich, e.g. https://immich.mydomain.com/api/
-  api_key               The Immich API Key to use
+    positional arguments:
+      screen_recordings     ah fuck it i know what this does i probably wont push it to github idk
+      album_name            The album name for your screen recordings
+      api_url               The root API URL of immich, e.g. https://immich.mydomain.com/api/
+      api_key               The Immich API Key to use
 
-options:
-  -h, --help            show this help message and exit
-  -d, --dry-run         Don't change anything, but see what would be done (default: False)
-  -q, --query QUERY     The search query to use. Default is screen (default: None)
-  --include-low-res     Include photos that are low resolution(under 1400x1400/~2MP). Default is false (default: False)
-  -a, --archive-recordings
-                        Archives all screen recordings to hide them from the timeline. Default is false (default: False)
-  -n, --library-name LIBRARY_NAME
-                        The name of the library to look for screen recordings in, if empty all libraries will be searched. (default: None)
-  -p, --import-path IMPORT_PATH
+    options:
+      -h, --help            show this help message and exit
+      -d, --dry-run         Don't change anything, but see what would be done (default: False)
+      -q, --query QUERY     The search query to use. Default is screen (default: None)
+      --include-low-res     Include photos that are low resolution(under 1400x1400/~2MP). Default is false (default: False)
+      -a, --archive-recordings
+                            Archives all screen recordings to hide them from the timeline. Default is false (default: False)
+      -n, --library-name LIBRARY_NAME
+                            The name of the library to look for screen recordings in, if empty all libraries will be searched. (default: None)
+      -p, --import-path IMPORT_PATH
                         The import path of the library to look for screen recordings in, if left empty all libraries will be searched (default: None)
-  -u, --unattended      Do not ask for user confirmation after identifying albums. Set this flag to run script as a cronjob. (default: False)
-  -c, --chunk-size CHUNK_SIZE
-                        Maximum number of assets to add to an album with a single API call (default: 2000)
-  -C, --fetch-chunk-size FETCH_CHUNK_SIZE
-                        Maximum number of assets to fetch with a single API call (default: 5000)
-  -l, --log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}
-                        Log level to use (default: INFO)
+      -u, --unattended      Do not ask for user confirmation after identifying albums. Set this flag to run script as a cronjob. (default: False)
+      -c, --chunk-size CHUNK_SIZE
+                            Maximum number of assets to add to an album with a single API call (default: 2000)
+      -C, --fetch-chunk-size FETCH_CHUNK_SIZE
+                            Maximum number of assets to fetch with a single API call (default: 5000)
+      -l, --log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}
+                            Log level to use (default: INFO)
     ```
-
 __Plain example without optional arguments:__
 ```bash
 python3 ./immich_screenrecord_organizer.py screenrecordingsAlbumName https://immich.mydomain.com/api thisIsMyApiKeyCopiedFromImmichWebGui --other-Arguments
