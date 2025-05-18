@@ -7,21 +7,24 @@ from collections import defaultdict
 
 
 parser = argparse.ArgumentParser(
-    description="Create Immich Albums from an external library path based on the top level folders",
+    description="Organize immich screenshots via the search API using a specific filename match query",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("album_name", help="The album name for your screenshots")
+parser.add_argument("album_name", help="The album name for your screen recordings")
 parser.add_argument("api_url", help="The root API URL of immich, e.g. https://immich.mydomain.com/api/")
 parser.add_argument("api_key", help="The Immich API Key to use")
+parser.add_argument("-d", "--dry-run", action="store_true", help="Don't change anything, but see what would be done")
+
+parser.add_argument("-q", "--query", help="The search query to use. Default is screen")
 parser.add_argument("--include-low-res", default=False, action="store_true",
                     help="Include photos that are low resolution(under 1400x1400/~2MP). Default is false")
-parser.add_argument("--with-smartsearch", default=False, action="store_true",
-                    help="Include screenshots that are found using smart search. Default is false")
-parser.add_argument("--archive-screens", default=False, action="store_true",
-                    help="Archives all the screenshots to hide them from the timeline. Default is false")
+#parser.add_argument("--with-smartsearch", default=False, action="store_true",
+#                    help="Include recordings that are found using smart search. Default is false")
+parser.add_argument("-a", "--archive-recordings", default=False, action="store_true",
+                    help="Archives all screen recordings to hide them from the timeline. Default is false")
 parser.add_argument("-n", "--library-name",
-                    help="The name of the library to look for screenshots in, if empty all libraries will be searched.")
+                    help="The name of the library to look for screen recordings in, if empty all libraries will be searched.")
 parser.add_argument("-p", "--import-path",
-                    help="The import path of the library to look for screenshots in, if left empty all libraries will be searched")
+                    help="The import path of the library to look for screen recordings in, if left empty all libraries will be searched")
 parser.add_argument("-u", "--unattended", action="store_true",
                     help="Do not ask for user confirmation after identifying albums. Set this flag to run script as a cronjob.")
 parser.add_argument("-c", "--chunk-size", default=2000, type=int,
@@ -42,8 +45,10 @@ album_name = args["album_name"]
 root_url = args["api_url"]
 api_key = args["api_key"]
 low_res = args['include_low_res']
-smartsearch = args['with_smartsearch']
-archive_screens = args['archive_screens']
+#smartsearch = args['with_smartsearch']
+searchquery = args["query"]
+dry_run = args["dry_run"]
+archive_recordings = args['archive_recordings']
 library_name = args["library_name"]
 import_path = args["import_path"]
 number_of_images_per_request = args["chunk_size"]
@@ -54,8 +59,8 @@ logging.debug("album_name = %s", album_name)
 logging.debug("root_url = %s", root_url)
 logging.debug("api_key = %s", api_key)
 logging.debug("low_res = %s", low_res)
-logging.debug("smartsearch = %s", smartsearch)
-logging.debug("archive_screens = %s", archive_screens)
+#logging.debug("smartsearch = %s", smartsearch)
+logging.debug("archive_recordings = %s", archive_recordings)
 logging.debug("library_name = %s", library_name)
 logging.debug("library_name = %s", import_path)
 logging.debug("number_of_images_per_request = %d", number_of_images_per_request)
@@ -138,12 +143,13 @@ def fetchAssetInfo(id):
 
 # Fetches assets from the Immich API
 # Uses the /search/metadata call.
-def fetchAssets():
+def fetchAssets(query):
     assets = []
     # prepare request body
     body = {}
+    body['originalFileName'] = query or 'screen'
     body['isOffline'] = 'false'
-    body['type'] = 'IMAGE'
+    body['type'] = 'VIDEO'
     body['withExif'] = True
     if (library_name is not None or import_path is not None) and library_id is not None:
         body['libraryId'] = library_id
@@ -171,19 +177,21 @@ def fetchAssets():
         assetsReceived = responseJson['assets']['items']
         logging.debug("Received %s assets with chunk %s", len(assetsReceived), page)
         assets += assetsReceived
-    if smartsearch:
-        assets += fetchAssetsSearchSmart()
+    #if smartsearch:
+    #    assets += fetchAssetsSearchSmart()
+    print(assets[1])
     return assets
 
 # Fetches assets from the Immich API
 # Uses the /search/smart call.
-def fetchAssetsSearchSmart():
+def fetchAssetsSearchSmart(query):
     assets = []
     # prepare request body
     body = {}
-    body['query'] = 'screenshot'
+    print(query or 'screen')
+    body['query'] = query or 'screen'
     body['isOffline'] = 'false'
-    body['type'] = 'IMAGE'
+    body['type'] = 'VIDEO'
     body['withExif'] = True
     if (library_name is not None or import_path is not None) and library_id is not None:
         body['libraryId'] = library_id
@@ -211,7 +219,6 @@ def fetchAssetsSearchSmart():
         assetsReceived = responseJson['assets']['items']
         logging.debug("Received %s assets with chunk %s", len(assetsReceived), page)
         assets += assetsReceived
-    print(assets)
     return assets
 
 # Fetches assets from the Immich API
@@ -278,7 +285,7 @@ def addAssetsToAlbum(albumId, assets):
 
 # append trailing slash to root URL
 if root_url[-1] != '/':
-    root_url = root_url + '/'
+    root_url +='/'
 
 serverVersion = fetchServerVersion()
 if serverVersion['major'] == 1 and serverVersion['minor'] <= 105:
@@ -292,26 +299,26 @@ elif import_path is not None:
     library_id = getLibraryByPath(import_path)
 
 logging.info("Requesting all assets")
-assets = fetchAssets()
-logging.info("%d photos found", len(assets))
+assets = fetchAssets(searchquery);
+logging.info("%d videos found", len(assets))
 
-logging.info("Sorting assets that are screenshots to the album...")
+logging.info("Sorting assets that are screen recordings to the album...")
 album_to_assets = defaultdict(list)
 assets_to_archive = []
 assets_to_unarchive = []
 
 if not len(album_name) > 0:
-    logging.warning("Got empty album name for screenshots, exiting...")
+    logging.warning("Got empty album name for screen recordings, exiting...")
     exit(1)
 
 for asset in assets:
     if "exposureTime" in asset['exifInfo'] and asset['exifInfo']['exposureTime'] is None:
         album_to_assets[album_name].append(asset['id'])
-        if archive_screens:
+        if archive_recordings:
             assets_to_archive.append(asset['id'])
     elif low_res and (int(asset['exifInfo']['exifImageWidth']) * int(asset['exifInfo']['exifImageHeight'])) < 1960000:
         album_to_assets[album_name].append(asset['id'])
-        if archive_screens:
+        if archive_recordings:
             assets_to_archive.append(asset['id'])
 
 album_to_assets = {k: v for k, v in sorted(album_to_assets.items(), key=(lambda item: item[0]))}
@@ -330,24 +337,25 @@ albums = fetchAlbums()
 album_to_id = {album['albumName']: album['id'] for album in albums}
 logging.info("%d existing albums identified", len(albums))
 
-logging.info("Creating albums if needed")
-cpt = 0
-for album in album_to_assets:
-    if album in album_to_id:
-        continue
-    album_to_id[album] = createAlbum(album)
-    logging.info('Album %s added!', album)
-    cpt += 1
-logging.info("%d albums created", cpt)
-
-logging.info("Adding assets to albums")
-# Note: Immich manages duplicates without problem,
-# so each time we can add all assets to same album, no photo will be duplicated
-for album, assets in album_to_assets.items():
-    id = album_to_id[album]
-    addAssetsToAlbum(id, assets)
-
-for asset_id in assets_to_archive:
-    archiveAsset(asset_id)
+if not dry_run:
+    logging.info("Creating albums if needed")
+    cpt = 0
+    for album in album_to_assets:
+        if album in album_to_id:
+            continue
+        album_to_id[album] = createAlbum(album)
+        logging.info('Album %s added!', album)
+        cpt += 1
+    logging.info("%d albums created", cpt)
+    
+    logging.info("Adding assets to albums")
+    # Note: Immich manages duplicates without problem,
+    # so each time we can add all assets to same album, no photo will be duplicated
+    for album, assets in album_to_assets.items():
+        id = album_to_id[album]
+        addAssetsToAlbum(id, assets)
+    
+    for asset_id in assets_to_archive:
+        archiveAsset(asset_id)
 
 logging.info("Done!")
